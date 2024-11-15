@@ -25,6 +25,8 @@ parser.add_argument("--video", type=str, default=None,
                     help="Video file to be processed.")
 parser.add_argument("--cam", type=int, default=0,
                     help="The webcam index.")
+parser.add_argument("--facedb", action='store_true',
+                    help="whether rebuild facedb")
 args = parser.parse_args()
 
 
@@ -54,11 +56,12 @@ def run():
     pose_estimator = PoseEstimator(frame_width, frame_height)
 
     vgg_face = FaceEmbedding("assets/vggface.onnx","face_recognition/facedb.db")
+    if args.facedb:
+        vgg_face.build_facedb("face_dataset")
 
     # Measure the performance with a tick meter.
     tm = cv2.TickMeter()
-
-    recored_time = 0
+    frame_count = 0 
     # Now, let the frames flow.
     while True:
 
@@ -70,33 +73,32 @@ def run():
         # If the frame comes from webcam, flip it so it looks like a mirror.
         if video_src == 0:
             frame = cv2.flip(frame, 2)
-
+        tm.start()
+        frame_count += 1
+        frame = cv2.resize(frame, (640, 480))
         # Step 1: Get faces from current frame.
         faces, _ = face_detector.detect(frame, 0.7)
 
         # Any valid face found?
-        if len(faces) > 0:
-            tm.start()
+        for i in range(len(faces)):
 
             # Step 2: Detect landmarks. Crop and feed the face area into the
             # mark detector. Note only the first face will be used for
             # demonstration.
-            face = refine(faces, frame_width, frame_height, 0.15)[0]
+            face = refine(faces, frame_width, frame_height, 0.15)[i]
             x1, y1, x2, y2 = face[:4].astype(int)
             patch = frame[y1:y2, x1:x2]
-            a = time.time()
-            names, scores = vgg_face.find(patch,"cosine")
-            b = time.time()
-            recored_time +=  b-a
 
-            print(names)
-            print(scores)
+            face_name, face_score = vgg_face.find(patch,"cosine")
+            vgg_face.visualize(frame, face[:4], face_name, face_score)
+            print(face_name)
+            print(face_score)
+
             #print(face_feature.shape)
 
             # cv2.imshow("patch", patch)
             # if cv2.waitKey(1) == 27:
             #     break
-
 
             # Run the mark detection.
             marks = mark_detector.detect([patch])[0].reshape([68, 2])
@@ -109,8 +111,6 @@ def run():
             # Step 3: Try pose estimation with 68 points.
             pose = pose_estimator.solve(marks)
 
-            tm.stop()
-
             # All done. The best way to show the result would be drawing the
             # pose on the frame in realtime.
 
@@ -118,22 +118,25 @@ def run():
             pose_estimator.visualize(frame, pose, color=(0, 255, 0))
 
             # Do you want to see the axes?
-            # pose_estimator.draw_axes(frame, pose)
+            pose_estimator.draw_axes(frame, pose)
 
             # Do you want to see the marks?
-            # mark_detector.visualize(frame, marks, color=(0, 255, 0))
+            mark_detector.visualize(frame, marks, color=(0, 255, 0))
 
             # Do you want to see the face bounding boxes?
-            # face_detector.visualize(frame, faces)
-        print("recored_time: ",recored_time)
+            face_detector.visualize(frame, faces)
+        tm.stop()
+
+        fps = frame_count / tm.getTimeSec()
+        print("FPS:", fps, frame_count, tm.getTimeSec())
         # Draw the FPS on screen.
         cv2.rectangle(frame, (0, 0), (90, 30), (0, 0, 0), cv2.FILLED)
-        cv2.putText(frame, f"FPS: {tm.getFPS():.0f}", (10, 20),
+        cv2.putText(frame, f"FPS: {fps:.0f}", (10, 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
 
         # Show preview.
         cv2.imshow("Preview", frame)
-        if cv2.waitKey(100) == 27:
+        if cv2.waitKey(1) == 27:
             break
 
 

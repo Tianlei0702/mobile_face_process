@@ -193,7 +193,7 @@ class FaceEmbedding:
             face_feature = self._l2_normalize(face_feature)
             self.facedb.add_face(name, face_feature)
 
-        #self.facedb.check_face()
+        self.facedb.check_face()
 
 
     def find(self,img, distance_metric = 'euclidean'):
@@ -202,7 +202,10 @@ class FaceEmbedding:
         db_name, db_img = self.facedb.get_face_feature()
         db_img = np.array(db_img)
 
+        recognition_name, recognition_score = 'unknow' , -1
+
         if distance_metric == "cosine":
+            face_threshold = 0.5
             # 计算向量a的模（长度）
             current_norm = np.sqrt(np.sum(current_img ** 2))
             # 计算矩阵B中每个向量的模（长度）
@@ -216,27 +219,36 @@ class FaceEmbedding:
             sorted_name = [db_name[i] for i in sorted_indices]
             sorted_scores = scores[sorted_indices]
 
+            if sorted_scores[0] > face_threshold:
+                recognition_name, recognition_score = sorted_name[0],sorted_scores[0]
+            
 
         elif distance_metric == "euclidean":
-            # diff = db_img - current_img
-            # squared_diff = diff ** 2
-            # sum_squared_diff = np.sum(squared_diff, axis = 1)
-            # scores = np.sqrt(sum_squared_diff)
+            face_threshold = 1.0
+
             scores = np.linalg.norm(db_img - current_img, axis =1)
 
             sorted_indices = np.argsort(scores)
             sorted_name = [db_name[i] for i in sorted_indices]
             sorted_scores = scores[sorted_indices]
 
-        return sorted_name,sorted_scores
+
+            if sorted_scores[0] < face_threshold:
+                recognition_name, recognition_score = sorted_name[0],sorted_scores[0]
+
+        return recognition_name, recognition_score
 
 
-
-
-        #     distance = find_euclidean_distance(alpha_embedding, beta_embedding)
-
-        
-
+    def visualize(self, image, location, name, score, box_color=(0, 0, 255), text_color=(255, 255, 255)):
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.5
+        thickness = 1
+        text = str(name) +f' {score:.2f}'
+        location = np.round(location).astype(np.uint16)
+        label_size, base_line = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        cv2.rectangle(image, (location[0],location[1]- label_size[1]),(location[2],location[1]+base_line), box_color, cv2.FILLED)
+        cv2.putText(image, text, (location[0],location[1]), font, font_scale, text_color, thickness)
+    
     # def visualize(self, image, results, box_color=(0, 255, 0), text_color=(0, 0, 0)):
     #     """Visualize the detection results.
 
@@ -261,4 +273,4 @@ class FaceEmbedding:
 
 if __name__=="__main__":
     vgg_face = FaceEmbedding(model_file = "assets/vggface.onnx", face_db_file = "face_recognition/facedb.db")
-    #vgg_face.build_facedb("face_dataset")
+    vgg_face.build_facedb("face_dataset")
