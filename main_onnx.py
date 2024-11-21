@@ -17,7 +17,9 @@ from face_detection import FaceDetector
 from mark_detection import MarkDetector
 from pose_estimation import PoseEstimator
 from face_recognition.face_recognition_onnx import FaceEmbedding
+from face_emotion import FaceEmotion
 from utils import refine
+import numpy as np
 
 # Parse arguments from user input.
 parser = ArgumentParser()
@@ -51,6 +53,8 @@ def run():
 
     # Setup a mark detector to detect landmarks.
     mark_detector = MarkDetector("assets/face_landmarks.onnx")
+    
+    emotion_detector = FaceEmotion("assets/facial_expression.onnx")
 
     # Setup a pose estimator to solve pose.
     pose_estimator = PoseEstimator(frame_width, frame_height)
@@ -61,7 +65,13 @@ def run():
 
     # Measure the performance with a tick meter.
     tm = cv2.TickMeter()
-    frame_count = 0 
+    frame_count = 0
+
+    #人脸数量, 当人脸数量改变的时候，才会进行人脸识别 
+    face_num = 0 
+    face_recognition_interval = 50 #人脸识别间隔
+    face_name_record = []
+    face_score_record =[] 
     # Now, let the frames flow.
     while True:
 
@@ -77,8 +87,17 @@ def run():
         frame_count += 1
         frame = cv2.resize(frame, (640, 480))
         # Step 1: Get faces from current frame.
-        faces, _ = face_detector.detect(frame, 0.7)
+        detected_faces, _ = face_detector.detect(frame, 0.7)
 
+        faces = detected_faces[np.lexsort((detected_faces[:, 1], detected_faces[:, 0]))]
+        if len(faces) == face_num and face_recognition_interval % 50 != 0:
+            Recognition_Flag = False
+        else:
+            print('---------------------------')
+            Recognition_Flag = True
+            face_name_record = []
+            face_score_record =[] 
+            face_num = len(faces)
         # Any valid face found?
         for i in range(len(faces)):
 
@@ -89,13 +108,18 @@ def run():
             x1, y1, x2, y2 = face[:4].astype(int)
             patch = frame[y1:y2, x1:x2]
 
-            face_name, face_score = vgg_face.find(patch,"cosine")
-            vgg_face.visualize(frame, face[:4], face_name, face_score)
-            print(face_name)
-            print(face_score)
+            if Recognition_Flag == True:
+                face_name, face_score = vgg_face.find(patch,"cosine")
+                #vgg_face.visualize(frame, face[:4], face_name, face_score)
+                face_name_record.append(face_name)
+                face_score_record.append(face_score)
 
-            #print(face_feature.shape)
-
+                emotion = emotion_detector.detect([patch])
+                emotion_detector.visualize(frame, face[:4], face_name, face_score, emotion)
+            else:
+                emotion = emotion_detector.detect([patch])
+                emotion_detector.visualize(frame, face[:4], face_name_record[i], face_score_record[i], emotion)
+            
             # cv2.imshow("patch", patch)
             # if cv2.waitKey(1) == 27:
             #     break
