@@ -14,6 +14,7 @@ assert
 ├── face_detector.onnx
 ├── face_landmarks.onnx
 └── vggface_quantized.onnx
+└── facial_expression.onnx
 ~~~
 
 人脸数据库在face_dataset/文件夹下
@@ -32,6 +33,7 @@ python main_onnx.py --video demo.mov
 
 ## Limitation
 目前，人脸识别用的deepface中的VGGFace, 转到onnx后在cpu上的推理速度依旧比较慢。
+暂时采取的策略是第一次检测到人脸数量变化，进行人脸识别，或正常情况下 人脸识别50帧/次
 
 
 ## Citation
