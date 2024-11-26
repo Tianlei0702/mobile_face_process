@@ -142,9 +142,9 @@ class FaceDetector:
             height = input_height // stride
             width = input_width // stride
             key = (height, width, stride)
-
             if key in self.center_cache:
                 anchor_centers = self.center_cache[key]
+
             else:
                 # solution-3:
                 anchor_centers = np.stack(

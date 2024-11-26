@@ -59,7 +59,7 @@ def run():
     # Setup a pose estimator to solve pose.
     pose_estimator = PoseEstimator(frame_width, frame_height)
 
-    vgg_face = FaceEmbedding("assets/vggface.onnx","face_recognition/facedb.db")
+    vgg_face = FaceEmbedding("assets/facenet128.onnx","face_recognition/facedb.db")
     if args.facedb:
         vgg_face.build_facedb("face_dataset")
 
@@ -90,7 +90,8 @@ def run():
         detected_faces, _ = face_detector.detect(frame, 0.7)
 
         faces = detected_faces[np.lexsort((detected_faces[:, 1], detected_faces[:, 0]))]
-        if len(faces) == face_num and face_recognition_interval % 50 != 0:
+        
+        if (len(faces) == face_num) and (frame_count % face_recognition_interval != 0):
             Recognition_Flag = False
         else:
             print('---------------------------')

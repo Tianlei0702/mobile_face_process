@@ -38,6 +38,5 @@ python main_onnx.py --video demo.mov
 
 ## Citation
 [deepface](https://github.com/serengil/deepface)
-
 [head-pose-estimation](https://github.com/yinguobing/head-pose-estimation)
 

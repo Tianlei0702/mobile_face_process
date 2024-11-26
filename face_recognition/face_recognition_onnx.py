@@ -22,8 +22,8 @@ class FaceEmbedding:
         self.facedb = FaceDB(face_db_file)
 
         self.center_cache = {}
-        self.nms_threshold = 0.4
-        self.input_size = [224,224]
+
+        self.input_size = [160,160]
         self.session = onnxruntime.InferenceSession(
             model_file, providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
 
@@ -66,8 +66,12 @@ class FaceEmbedding:
             img[..., 0] -= 93.5940
             img[..., 1] -= 104.7624
             img[..., 2] -= 129.1863
+        
+        elif normalization == "Facenet":
+            mean, std = img.mean(), img.std()
+            img = (img - mean) / std
 
-        # img = np.transpose(img, [0, 3, 1, 2])
+        img = np.transpose(img, [0, 3, 1, 2])
         # print(img.shape)
         return img
 
@@ -140,9 +144,9 @@ class FaceEmbedding:
 
     def embedding(self,img):
         img = self._resize_image(img, (self.input_size[1], self.input_size[0]))
-        img = self._normalize_input(img, normalization="VGGFace")
-        face_feature = self.session.run(self.output_names, {self.input_name: img})[0][0].tolist()
-        face_feature = self._l2_normalize(face_feature)
+        img = self._normalize_input(img, normalization="Facenet")
+        face_feature = self.session.run(self.output_names, {self.input_name: img})[0][0]#.tolist()
+        #face_feature = self._l2_normalize(face_feature)
         return face_feature
 
 
@@ -188,9 +192,11 @@ class FaceEmbedding:
             name = load_names[i]
             image = loaded_images[i]
             image = self._resize_image(image, (self.input_size[1], self.input_size[0]))
-            image = self._normalize_input(image, normalization="VGGFace")
+            image = self._normalize_input(image, normalization="Facenet")
             face_feature = self.session.run(self.output_names, {self.input_name: image})[0][0].tolist()
-            face_feature = self._l2_normalize(face_feature)
+            # print(face_feature.shape)
+            # face_feature = self._l2_normalize(face_feature)
+
             self.facedb.add_face(name, face_feature)
 
         self.facedb.check_face()
