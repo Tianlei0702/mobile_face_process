@@ -5,12 +5,11 @@ import numpy as np
 import onnxruntime
 from typing import Tuple
 from face_recognition.face_db import FaceDB
-from rknn.api import RKNN as RKNNLite
 from tqdm import *
 
 
 class FaceEmbedding:
-    def __init__(self, model_file, face_db_file):
+    def __init__(self, model_file, face_db_file, RKNNLite,lite_flag):
         """Initialize a face embedding.
 
         Args:
@@ -20,22 +19,21 @@ class FaceEmbedding:
         assert os.path.exists(model_file), f"File not found: {model_file}"
 
         self.facedb = FaceDB(face_db_file)
-
-        self.center_cache = {}
-
+        self.rknn_lite = RKNNLite()
+        
         self.input_size = [160,160]
 
-        self.rknn_lite = RKNNLite()
-        self.rknn_lite.config(target_platform='rk3588')
-        #self.rknn_lite.config(mean_values = [[127.5, 127.5, 127.5]], std_values=[[127.5, 127.5, 127.5]], target_platform='rk3588')
-        # self.rknn_lite.config(mean_values = [[0, 0, 0]], std_values=[[1, 1, 1]],target_platform='rk3588', dynamic_input = [[[1,3,160,160]]])
-        ret =  self.rknn_lite.load_onnx(model="/home/jtl/playmate_robot/light_face_process/assets/facenet128.onnx")
-        #ret = self.rknn_lite.build(do_quantization=True,dataset="dataset.txt")
-        ret = self.rknn_lite.build(do_quantization=False)
-        ret = self.rknn_lite.export_rknn("facenet128.rknn")
-
-        #ret = self.rknn_lite.load_rknn(model_file)
-        ret = self.rknn_lite.init_runtime()
+        #init rknn environment
+        if lite_flag:
+            ret = self.rknn_lite.load_rknn(model_file)
+            ret = self.rknn_lite.init_runtime(core_mask=RKNNLite.NPU_CORE_AUTO)
+        else:
+            self.rknn_lite.config( target_platform='rk3588')
+            #ret =  self.rknn_lite.load_onnx(model="~/playmate_robot/light_face_process/assets/facenet128.onnx")
+            ret =  self.rknn_lite.load_onnx(model=model_file)
+            ret = self.rknn_lite.build(do_quantization=False)
+            ret = self.rknn_lite.export_rknn("facenet128.rknn")
+            ret = self.rknn_lite.init_runtime()
 
 
 
