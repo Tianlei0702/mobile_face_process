@@ -13,11 +13,16 @@
 assert 
 ├── face_detector.onnx
 ├── face_landmarks.onnx
-└── vggface_quantized.onnx
+├── vggface_quantized.onnx
+├── facenet128.onnx
 └── facial_expression.onnx
 ~~~
 
 人脸数据库在face_dataset/文件夹下
+
+
+在RK3588上进行调用[请查看](https://github.com/Tianlei0702/mobile_face_process/tree/main/RKNN)
+
 
 ## Running
 重新加载人脸数据库

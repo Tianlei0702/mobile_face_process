@@ -36,21 +36,12 @@ python main_rknn.py
 ### 在rk3588开发板上进行测试
 
 ~~~
-# 在电脑上基于 rknpu 测试，使用的是from rknn.api import RKNN as RKNNLite
-# 切换到rk3588上，需要 使用 from rknnlite.api import RKNNLite
+在电脑上基于 rknpu 测试，使用的是from rknn.api import RKNN as RKNNLite
+切换到rk3588上，需要 使用 from rknnlite.api import RKNNLite
 
-from rknnlite.api import RKNNLite
-#from rknn.api import RKNN as RKNNLite
+在main_img.py 和 main_rknn.py中，通过lite_flag参数进行切换
 ~~~
 
 
 
-
-
-
-
-## Citation
-[deepface](https://github.com/serengil/deepface)
-[head-pose-estimation](https://github.com/yinguobing/head-pose-estimation)
-[Peppa_Pig_Face_Landmark](https://github.com/610265158/Peppa_Pig_Face_Landmark)
 
