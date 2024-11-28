@@ -53,7 +53,7 @@ class FaceEmotion:
         #     img_gray = cv2.resize(img_gray, (48, 48))
         #     gray.append(img_gray)
 
-        img_gray = cv2.cvtColor(bgrs[0], cv2.COLOR_BGR2GRAY)
+        img_gray = cv2.cvtColor(bgrs, cv2.COLOR_BGR2GRAY)
         img_gray = cv2.resize(img_gray, (48, 48))
         img_gray = np.expand_dims(img_gray, axis=0).astype(np.float32)
         
@@ -69,6 +69,7 @@ class FaceEmotion:
             marks: the facial marks as a numpy array of shape [Batch, 68*2].
         """
         inputs = self._preprocess(images)
+        print(inputs.shape)
         emotions = self.session.run(self.output_names, {self.input_name: inputs})[0][0]
         #emotion = self.labels[np.argmax(emotions)]
         return self.labels[np.argmax(emotions)]

@@ -209,7 +209,7 @@ class FaceEmbedding:
         db_img = np.array(db_img)
 
         recognition_name, recognition_score = 'unknow' , -1
-
+        
         if distance_metric == "cosine":
             face_threshold = 0.5
             # 计算向量a的模（长度）

@@ -59,9 +59,9 @@ def run():
     # Setup a pose estimator to solve pose.
     pose_estimator = PoseEstimator(frame_width, frame_height)
 
-    vgg_face = FaceEmbedding("assets/facenet128.onnx","face_recognition/facedb.db")
+    face_reco = FaceEmbedding("assets/facenet128.onnx","face_recognition/facedb.db")
     if args.facedb:
-        vgg_face.build_facedb("face_dataset")
+        face_reco.build_facedb("face_dataset")
 
     # Measure the performance with a tick meter.
     tm = cv2.TickMeter()
@@ -110,12 +110,12 @@ def run():
             patch = frame[y1:y2, x1:x2]
 
             if Recognition_Flag == True:
-                face_name, face_score = vgg_face.find(patch,"cosine")
+                face_name, face_score = face_reco.find(patch,"cosine")
                 #vgg_face.visualize(frame, face[:4], face_name, face_score)
                 face_name_record.append(face_name)
                 face_score_record.append(face_score)
 
-                emotion = emotion_detector.detect([patch])
+                emotion = emotion_detector.detect(patch)
                 emotion_detector.visualize(frame, face[:4], face_name, face_score, emotion)
             else:
                 emotion = emotion_detector.detect([patch])
@@ -127,7 +127,7 @@ def run():
 
             # Run the mark detection.
             marks = mark_detector.detect([patch])[0].reshape([68, 2])
-
+            
             # Convert the locations from local face area to the global image.
             marks *= (x2 - x1)
             marks[:, 0] += x1
